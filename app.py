@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from flask_wtf import FlaskForm
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 from wtforms import StringField
 from wtforms.validators import DataRequired
 import random
@@ -30,44 +30,110 @@ def index():
     if request.method == 'POST':
         long_url = request.form.get('url')
         if form.validate_on_submit() and is_valid_url(str(long_url), str(request.url)):
-            short_url = generate_short_url(long_url)
-            return f"{ short_url }"
+            short_url = generate_short_path(long_url)
+            return f"<a href=\"{request.url}{short_url}\">{request.url}{short_url}</a>"
         else:
             return "not a valid url"
 
 
-def is_valid_url(url: str, source_url: str) -> bool:
+@app.route("/redirecttarget")
+def redirecttarget():
+    return "hooray"
+
+
+# temporary, probably want to store in redis or similar
+shortcode_mappings = {}
+
+
+@app.route("/<shortcode>")
+def shortcode(shortcode: str):
     """
-      Validates that the user input has valid url syntax
+    Route that handles shortcodes
 
-      Args:
-          String containing the long url
+    Args:
+        shortcode in path
 
-      Returns:
-          boolean
+    Returns:
+        Redirection to shortcode's mapping
 
-      Raises:
-          Nothing
+    Raises:
+        Nothing
+    """
+    print(f"Redirecting to {shortcode_mappings[shortcode].geturl()}")
+    return redirect(f"{shortcode_mappings[shortcode].path}", 301)
+
+
+def get_parsed_url(url: str) -> ParseResult:
+    """
+    Parses the url argument into a urlparse object
+
+    Args:
+        String containing the long url
+
+    Returns:
+        URLParse
+
+    Raises:
+        Exception
     """
     try:
+        if "http" not in url:
+            # inject missing protocol to play nicely with urlparse
+            url = f"http://{url}"
+        parsed = urlparse(url)
+    except Exception as e:
+        print(e)
+        return None
+    return parsed
+
+
+def is_valid_url(url: str, source_url: str) -> bool:
+    """
+    Validates that the user input has valid url syntax
+
+    Args:
+        String containing the long url
+
+    Returns:
+        boolean
+
+    Raises:
+        Nothing
+    """
+    try:
+        if "http" not in url:
+            # inject missing protocol to play nicely with urlparse
+            url = f"http://{url}"
         parsed = urlparse(url)
     except Exception as e:
         print(e)
         return False
 
-    print(parsed)
+    try:
+        parsed_source_url = urlparse(source_url)
+    except Exception as e:
+        print(e)
+        return False
+
+    # Check if the entered url shares the same subdomain as this app's subdomain
+    if parsed.hostname != parsed_source_url.hostname:
+        print(
+            f"hostname: {parsed.hostname} and {parsed_source_url.hostname} do not match")
+        return False
+
+    # Check that the entered url has a path
     if parsed.path is None:
         return False
 
     return True
 
 
-def generate_short_url(url: str):
+def generate_short_path(url: str):
     """
     Generates a short URL from the passed url argument
 
     Args:
-       String containing the long URL 
+       String containing the long path 
 
     Returns:
         Shortened url
@@ -76,24 +142,20 @@ def generate_short_url(url: str):
         None
     """
 
-    return url
+    charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    shortcode_length = 6
 
-    # retrieve slug
-#
-#    charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-#    shortcode_length = 6
-#
-#    shortcode = ""
-#    for i in range(shortcode_length):
-#        shortcode.append(random.choice(charset))
-#
-#    return f"{url.split('/')[0]}{ shortcode }"
+    shortcode = "".join(random.choice(charset)
+                        for i in range(shortcode_length))
+
+    # store mapping in a dictionary for now
+    print("URL: ", url)
+    shortcode_mappings[shortcode] = get_parsed_url(url)
+    return shortcode
 
 
 class URLForm(FlaskForm):
-    """
-    A class representing our URLForm. Extends FlaskForm
-    """
+    """ A class representing our URLForm. Extends FlaskForm """
     url = StringField('url', validators=[DataRequired()])
 
 
@@ -102,4 +164,4 @@ if __name__ == "__main__":
         SECRET_KEY="pineappleyogafrenchpresscottoncandy",
         WTF_CSRF_SECRET_KEY="a csrf secret key"
     ))
-    app.run()
+    app.run(host='0.0.0.0', debug=True)
