@@ -36,12 +36,7 @@ def index():
             return "not a valid url"
 
 
-@app.route("/redirecttarget")
-def redirecttarget():
-    return "hooray"
-
-
-# temporary, probably want to store in redis or similar
+# temporary, probably want to move this to backend storage
 shortcode_mappings = {}
 
 
@@ -59,8 +54,9 @@ def shortcode(shortcode: str):
     Raises:
         Nothing
     """
-    print(f"Redirecting to {shortcode_mappings[shortcode].geturl()}")
-    return redirect(f"{shortcode_mappings[shortcode].path}", 301)
+    url = shortcode_mappings[shortcode].geturl()
+    print(f"Redirecting to {url}")
+    return redirect(url, 301)
 
 
 def get_parsed_url(url: str) -> ParseResult:
@@ -113,12 +109,6 @@ def is_valid_url(url: str, source_url: str) -> bool:
         parsed_source_url = urlparse(source_url)
     except Exception as e:
         print(e)
-        return False
-
-    # Check if the entered url shares the same subdomain as this app's subdomain
-    if parsed.hostname != parsed_source_url.hostname:
-        print(
-            f"hostname: {parsed.hostname} and {parsed_source_url.hostname} do not match")
         return False
 
     # Check that the entered url has a path
