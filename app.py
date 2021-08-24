@@ -111,10 +111,6 @@ def is_valid_url(url: str, source_url: str) -> bool:
         print(e)
         return False
 
-    # Check that the entered url has a path
-    if parsed.path is None:
-        return False
-
     return True
 
 
