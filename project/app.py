@@ -1,14 +1,25 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, Blueprint, render_template, request, redirect
 from flask_wtf import FlaskForm
 from urllib.parse import ParseResult, urlparse
 from wtforms import StringField
 from wtforms.validators import DataRequired
 import random
 
-app = Flask(__name__)
+# Create blueprint to allow us to use Flask App Factory Pattern
+urlshortener = Blueprint("urlshortener", __name__)
 
 
-@app.route('/', methods=['POST', 'GET'])
+def create_app():
+    app = Flask(__name__)
+    app.config.update(dict(
+        SECRET_KEY="pineappleyogafrenchpresscottoncandy",
+        WTF_CSRF_SECRET_KEY="a csrf secret key"
+    ))
+    app.register_blueprint(urlshortener)
+    return app
+
+
+@urlshortener.route('/', methods=['POST', 'GET'])
 def index():
     """
     Index page for the application. shows a form to submit a url
@@ -40,7 +51,7 @@ def index():
 shortcode_mappings = {}
 
 
-@app.route("/<shortcode>")
+@urlshortener.route("/<shortcode>")
 def shortcode(shortcode: str):
     """
     Route that handles shortcodes
@@ -146,8 +157,5 @@ class URLForm(FlaskForm):
 
 
 if __name__ == "__main__":
-    app.config.update(dict(
-        SECRET_KEY="pineappleyogafrenchpresscottoncandy",
-        WTF_CSRF_SECRET_KEY="a csrf secret key"
-    ))
+    app = create_app()
     app.run(host='0.0.0.0', debug=True)

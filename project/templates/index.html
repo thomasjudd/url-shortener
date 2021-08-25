@@ -1,11 +1,11 @@
 <html>
 
 <head>
-    <title>Hello, World!</title>
+    <title>URL Shortener</title>
 </head>
 
 <body>
-    <h1>Hello World!</h1>
+    <h1>URL Shortener</h1>
     <form method="POST" action="/">
         {{ form.csrf_token }}
         {{ form.url.label }} {{ form.url(size=20) }}
