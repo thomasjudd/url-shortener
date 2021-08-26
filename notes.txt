@@ -1,0 +1,15 @@
+Prerequisites:
+docker
+docker compose
+python3.7
+
+to run the service run `make run`
+
+I struggled with dockerizing testing, so to run pytest you need to do the following first
+
+python -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+
+to run tests run 
+pytest test/unittests/*

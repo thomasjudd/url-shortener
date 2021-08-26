@@ -14,7 +14,7 @@ RUN python -m pip install Werkzeug==2.0.1
 RUN python -m pip install WTForms==2.3.3
 RUN python -m pip install zipp==3.5.0
 
-COPY ./*  /app/
+COPY ./project/*  /app/
 
 EXPOSE 80
 

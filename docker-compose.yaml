@@ -1,8 +1,9 @@
 version: '2'
 services:
     urlshortener:
-        build: ./project/
+        build:
+            context: ./
+            dockerfile: ./Dockerfile.run
+
         ports:
             - "80:5000"
-        volumes:
-            - ./project/:/app/

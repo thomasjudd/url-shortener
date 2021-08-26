@@ -113,7 +113,7 @@ def is_valid_url(url: str, source_url: str) -> bool:
             url = f"http://{url}"
         parsed = urlparse(url)
     except Exception as e:
-        print(e)
+        print(f"url parse exception{e}")
         return False
 
     try:
